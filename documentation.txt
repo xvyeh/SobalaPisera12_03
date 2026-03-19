@@ -1,0 +1,122 @@
+# SecureGuard – Financial Data Validator Documentation
+
+##  Overview
+
+SecureGuard is a Python system built with Pydantic v2 to clean, validate, and standardize messy financial data from APIs. It enforces strict rules, protects sensitive data, and outputs safe, structured JSON.
+
+---
+
+##  Installation
+
+1. Clone repo
+2. Create venv: `python -m venv venv`
+3. Activate: `venv\\Scripts\\activate` (Windows) or `source venv/bin/activate`
+4. Install: `pip install -r requirements.txt`
+
+---
+
+##  How It Works
+
+Pipeline:
+RAW JSON → alias mapping (camelCase→snake_case) → type coercion (str→Decimal/datetime) → field validation → model validation → computed fields → CLEAN OUTPUT
+
+---
+
+##  User Model
+
+* ID: UUID or `ACC-XXXX`
+* Email: validated
+* Age: 18–120
+* Address: nested with 5-digit ZIP
+* SSN: accepted on input, excluded on output
+
+---
+
+##  Transaction Model
+
+* Currency: USD/EUR/GBP (Enum)
+* Amount: `Decimal` and > 0 (accepts strings)
+* Timestamp: ISO string → datetime
+* Type: DEBIT/CREDIT
+
+---
+
+##  Insurance Policy
+
+* Policy number: uppercase, 10 chars
+* Date rule: end ≥ start + 30 days
+* Status: ACTIVE / ELAPSED / PENDING
+
+---
+
+##  Account Model
+
+* Combines user + transactions
+* Computed:
+
+  * Total value = sum of amounts
+  * Risk score:
+
+    * High: total > 10000 or age < 25
+    * Medium: total > 5000
+    * Low: otherwise
+
+---
+
+##  Aliases
+
+Handles camelCase input automatically (e.g., `zipCode → zip_code`).
+
+---
+
+##  Financial Accuracy
+
+Uses `Decimal` to avoid floating-point errors.
+
+---
+
+##  Security
+
+Sensitive fields (e.g., SSN) are excluded during serialization.
+
+---
+
+##  Config (Strict vs Lax)
+
+* Lax (default): allows coercion ("123" → int)
+* Strict: enforces exact types
+* Controlled via environment variable
+
+---
+
+##  Error Handling
+
+Validation errors are returned as structured JSON:
+
+```
+[{"loc": [...], "msg": "..."}]
+```
+
+---
+
+##  Tests
+
+Run all: `pytest`
+
+---
+
+##  Usage
+
+```python
+from models.account import Account
+
+account = Account(**raw_data)
+print(account.model_dump())
+print(account.risk_score)
+```
+
+---
+
+##  Summary
+
+SecureGuard validates, cleans, and secures financial data with strong typing, business rules, and API-friendly behavior.
